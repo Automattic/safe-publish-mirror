@@ -14,3 +14,6 @@ Thumbs.db
 
 # Local runtime-config override (see fixtures/README.md)
 fixtures/config-local.php
+
+# Local PHPUnit config pointing at the dev-env database (host-specific)
+.wp-tests-config.php
