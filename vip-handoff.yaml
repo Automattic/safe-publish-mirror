@@ -7,7 +7,7 @@ integration:
   summary: Mirror published content from one WordPress site to another as drafts, over an HMAC-authenticated channel.
   partner:
     name: Stark Industries
-    support_contact: vip-integrations@automattic.com
+    support_contact: vip-integrations@starkindustries.com
 
 documentation:
   public_url: https://github.com/Automattic/safe-publish-mirror/blob/trunk/README.md
