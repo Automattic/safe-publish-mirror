@@ -40,6 +40,15 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 /** @psalm-suppress UnresolvableInclude */
 require_once $_tests_dir . '/includes/bootstrap.php';
 
+// The ready, export-role fixture above makes the plugin wire its source REST API
+// globally when WP fires `init` during bootstrap, registering an inbound
+// authenticator bound to the fixture's peer on `rest_pre_dispatch`. The REST and
+// Source_Fields unit tests construct their own instances with a hermetic
+// authenticator, so unhook that global wiring — otherwise the plugin's
+// authenticator rejects each test's signed request (origin mismatch) before the
+// test's own authenticator can run.
+remove_action( 'rest_api_init', [ \Automattic\SafePublishMirror\Plugin::get_instance(), 'register_rest_api' ] );
+
 /**
  * @psalm-suppress InvalidGlobal
  * @var string
