@@ -63,4 +63,62 @@ namespace {
 	 * @return void
 	 */
 	function add_settings_field( $id, $title, $callback, $page, $section = 'default', $args = array() ) {}
+
+	/**
+	 * VIP fetch helper, present only on the VIP platform.
+	 *
+	 * @param string $url
+	 * @param string $fallback_value
+	 * @param int    $threshold
+	 * @param int    $timeout
+	 * @param int    $retry
+	 * @param array<string, mixed> $args
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	function vip_safe_wp_remote_get( $url, $fallback_value = '', $threshold = 3, $timeout = 1, $retry = 20, $args = array() ) {}
+
+	/**
+	 * VIP cached attachment resolver, present only on the VIP platform.
+	 *
+	 * @param string $url
+	 * @return int
+	 */
+	function wpcom_vip_attachment_url_to_postid( $url ) {}
+
+	/**
+	 * Minimal WP-CLI stub for static analysis (the real class ships with WP-CLI).
+	 */
+	class WP_CLI {
+		/**
+		 * @param string $message
+		 * @psalm-return never-returns
+		 */
+		public static function error( $message ) {}
+
+		/**
+		 * @param string $message
+		 * @return void
+		 */
+		public static function success( $message ) {}
+
+		/**
+		 * @param string $message
+		 * @return void
+		 */
+		public static function warning( $message ) {}
+
+		/**
+		 * @param string $message
+		 * @return void
+		 */
+		public static function log( $message ) {}
+
+		/**
+		 * @param string                 $name
+		 * @param callable|object|string $callable
+		 * @param array<string, mixed>   $args
+		 * @return bool
+		 */
+		public static function add_command( $name, $callable, $args = array() ) {}
+	}
 }
