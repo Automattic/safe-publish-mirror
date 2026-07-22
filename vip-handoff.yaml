@@ -1,0 +1,148 @@
+manifest_version: 1
+manifest_kind: vip-integration-handoff
+
+integration:
+  slug: safe-publish-mirror
+  display_name: Safe Publish Mirror [Experimental]
+  summary: Mirror published content from one WordPress site to another as drafts, over an HMAC-authenticated channel.
+  partner:
+    name: Automattic VIP (SDK reconstruction pilot)
+    support_contact: vip-integrations@automattic.com
+
+documentation:
+  public_url: https://github.com/Automattic/safe-publish-mirror/blob/trunk/README.md
+  support_url: https://github.com/Automattic/safe-publish-mirror/blob/trunk/docs/vip-integration.md
+
+release_package:
+  includes_built_assets: false
+  build_required_before_package: false
+
+runtime:
+  wordpress_plugin:
+    folder: safe-publish-mirror
+    entry_file: safe-publish-mirror.php
+    plugin_header_name: Safe Publish Mirror
+    text_domain: safe-publish-mirror
+    php_namespace: 'Automattic\SafePublishMirror'
+    rest_namespace: safe-publish-mirror/v1
+    scope: site
+
+runtime_config:
+  constant_name: VIP_SAFE_PUBLISH_MIRROR_CONFIG
+  fields:
+    - key: connected_site_url
+      label: Connected site URL
+      description: The connected peer site. On import it is the source to pull from; on export it is the allowed destination origin.
+      type: url
+      required: true
+    - key: sync_mode
+      label: Sync mode
+      description: This site's role in the sync pair — export serves content, import pulls content.
+      type: enum
+      required: true
+      values:
+        - export
+        - import
+    - key: shared_secret
+      label: Shared secret
+      description: HMAC-SHA256 shared secret used to authenticate the source/destination handshake. Populated by VIP secret-sync.
+      type: secret
+      required: true
+
+local_config_examples:
+  - name: minimal_valid
+    purpose: Smallest config that lets an import-role (destination) site initialize and authenticate against the source.
+    runtime_config:
+      connected_site_url: https://source.example
+      sync_mode: import
+      shared_secret: mock-shared-secret-abc123456789
+  - name: fully_configured
+    purpose: Export-role (source) site that serves its catalog to the allowed destination origin.
+    runtime_config:
+      connected_site_url: https://destination.example
+      sync_mode: export
+      shared_secret: mock-shared-secret-abc123456789
+  - name: incomplete_setup
+    purpose: Missing the required shared secret, used to prove the plugin disables sync and shows a diagnostic without fataling.
+    runtime_config:
+      connected_site_url: https://source.example
+      sync_mode: import
+
+commands:
+  local_dev:
+    start: vip dev-env start
+  dependencies:
+    php_install: composer install
+    node_install: npm ci
+  build:
+    required: false
+    command: npm run build
+  tests:
+    command: composer test
+    includes:
+      - phpunit
+      - e2e
+  contract_validation:
+    command: composer run validate-integration
+    notes: Provisional wrapper that runs the VIP integration conformance validator (placeholder until VIP publishes it). Equivalent to a8c-integration validate.
+
+wordpress_surfaces:
+  wp_cli_commands:
+    - command: wp safe-publish-mirror import
+      purpose: Run a destination-side import of the source catalog, creating or updating drafts.
+      destructive: false
+      requires_runtime_config: true
+      intended_for_support: true
+  rest_routes:
+    - namespace: safe-publish-mirror/v1
+      route: /catalog/posts
+      methods:
+        - GET
+      purpose: HMAC-authenticated catalog of source posts for the connected peer (export role only).
+  cron_events: []
+  options: []
+  post_meta:
+    - key: safe_publish_mirror_source_post_id
+      object_type: post
+      purpose: Source post ID an imported draft was mirrored from; used to update rather than duplicate on re-import.
+    - key: safe_publish_mirror_source_site_url
+      object_type: post
+      purpose: Source site URL an imported draft was mirrored from.
+    - key: safe_publish_mirror_source_link
+      object_type: post
+      purpose: Original permalink of the source post an imported draft was mirrored from.
+  custom_tables: []
+  admin_pages:
+    - slug: safe-publish-mirror
+      title: Safe Publish Mirror
+      parent: top-level
+      capability: manage_options
+      purpose: Import-role screen listing the source catalog with per-post import actions.
+  frontend_scripts: []
+
+telemetry:
+  prefix: safe_publish_mirror_
+  default_properties:
+    - plugin_version
+  events:
+    - name: safe_publish_mirror_catalog_listed
+      type: tracks
+      trigger: The source catalog endpoint serves a page of posts to the authenticated peer.
+      properties:
+        - post_type
+        - count
+      note: Lets support see catalog usage on the source without exposing content, URLs, or credentials.
+    - name: safe_publish_mirror_import_completed
+      type: tracks
+      trigger: A destination import run finishes.
+      properties:
+        - created
+        - updated
+        - failed
+      note: Lets support see import volume and failure counts without exposing imported content.
+
+release:
+  plugin_version: 1.0.0
+  version_strategy: latest
+  migration_required: false
+  changelog: Initial VIP handoff for the Safe Publish Mirror reconstruction integration.
