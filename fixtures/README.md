@@ -7,9 +7,9 @@ local development and automated testing.
 
 | Fixture | State it simulates |
 | --- | --- |
-| `config-valid.php` | Fully configured: all required and optional fields set. |
-| `config-minimal.php` | Required fields only; optional fields fall back to defaults. |
-| `config-incomplete.php` | Setup in progress: a required field is missing. The plugin must degrade gracefully, never fatal. |
+| `config-valid.php` | Fully configured for the **export** (source) role. |
+| `config-minimal.php` | Fully configured for the **import** (destination) role. |
+| `config-incomplete.php` | Setup in progress: the `shared_secret` is missing. The plugin must degrade gracefully, never fatal. |
 | `config-invalid.php` | Constant holds a non-array value. Exercises the `is_array()` guard. |
 | `config-local.php` | Optional, **git-ignored** local override — see below. |
 

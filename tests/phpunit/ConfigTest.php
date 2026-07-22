@@ -11,20 +11,35 @@ use WP_UnitTestCase;
 class ConfigTest extends WP_UnitTestCase {
 	private const FIXTURES_DIR = __DIR__ . '/../../fixtures';
 
-	public function test_fully_configured_fixture(): void {
+	public function test_export_fixture_is_ready(): void {
 		$config = new Config( require self::FIXTURES_DIR . '/config-valid.php' );
 
 		static::assertTrue( $config->is_available() );
 		static::assertTrue( $config->is_ready() );
 		static::assertSame( [], $config->missing_fields() );
-		static::assertSame( 'https://api.vendor.example', $config->get( 'api_base_url' ) );
+		static::assertTrue( $config->is_export() );
+		static::assertFalse( $config->is_import() );
+		static::assertSame( 'https://destination.example', $config->connected_site_url() );
 	}
 
-	public function test_minimal_fixture_is_ready_and_optional_fields_fall_back(): void {
+	public function test_import_fixture_is_ready(): void {
 		$config = new Config( require self::FIXTURES_DIR . '/config-minimal.php' );
 
 		static::assertTrue( $config->is_ready() );
-		static::assertSame( 'fallback', $config->get( 'signature_label', 'fallback' ) );
+		static::assertTrue( $config->is_import() );
+		static::assertFalse( $config->is_export() );
+		// A key outside the schema falls back to the supplied default.
+		static::assertSame( 'fallback', $config->get( 'not_a_field', 'fallback' ) );
+	}
+
+	public function test_connected_site_url_is_untrailingslashed(): void {
+		$config = new Config( [
+			'connected_site_url' => 'https://source.example/',
+			'sync_mode'          => 'import',
+			'shared_secret'      => 'a-shared-secret-value',
+		] );
+
+		static::assertSame( 'https://source.example', $config->connected_site_url() );
 	}
 
 	public function test_incomplete_fixture_degrades_gracefully(): void {
@@ -32,7 +47,7 @@ class ConfigTest extends WP_UnitTestCase {
 
 		static::assertTrue( $config->is_available() );
 		static::assertFalse( $config->is_ready() );
-		static::assertSame( [ 'api_token' ], $config->missing_fields() );
+		static::assertSame( [ 'shared_secret' ], $config->missing_fields() );
 	}
 
 	public function test_invalid_fixture_is_not_available(): void {
@@ -40,17 +55,31 @@ class ConfigTest extends WP_UnitTestCase {
 
 		static::assertFalse( $config->is_available() );
 		static::assertFalse( $config->is_ready() );
-		static::assertSame( 'default', $config->get( 'api_base_url', 'default' ) );
+		static::assertSame( 'default', $config->get( 'connected_site_url', 'default' ) );
 	}
 
 	public function test_empty_required_field_counts_as_missing(): void {
 		$config = new Config( [
-			'api_base_url' => '',
-			'api_token'    => 'mock-token',
+			'connected_site_url' => '',
+			'sync_mode'          => 'import',
+			'shared_secret'      => 'a-shared-secret-value',
 		] );
 
 		static::assertFalse( $config->is_ready() );
-		static::assertSame( [ 'api_base_url' ], $config->missing_fields() );
+		static::assertSame( [ 'connected_site_url' ], $config->missing_fields() );
+	}
+
+	public function test_unrecognized_sync_mode_counts_as_missing(): void {
+		$config = new Config( [
+			'connected_site_url' => 'https://source.example',
+			'sync_mode'          => 'bidirectional',
+			'shared_secret'      => 'a-shared-secret-value',
+		] );
+
+		static::assertFalse( $config->is_ready() );
+		static::assertSame( [ 'sync_mode' ], $config->missing_fields() );
+		static::assertFalse( $config->is_export() );
+		static::assertFalse( $config->is_import() );
 	}
 
 	/**
@@ -62,12 +91,13 @@ class ConfigTest extends WP_UnitTestCase {
 	 */
 	public function test_unusable_required_field_counts_as_missing( $value ): void {
 		$config = new Config( [
-			'api_base_url' => 'https://api.vendor.example',
-			'api_token'    => $value,
+			'connected_site_url' => 'https://source.example',
+			'sync_mode'          => 'import',
+			'shared_secret'      => $value,
 		] );
 
 		static::assertFalse( $config->is_ready() );
-		static::assertSame( [ 'api_token' ], $config->missing_fields() );
+		static::assertSame( [ 'shared_secret' ], $config->missing_fields() );
 	}
 
 	/**
@@ -97,16 +127,17 @@ class ConfigTest extends WP_UnitTestCase {
 
 	public function test_for_display_masks_secrets_and_stringifies_values(): void {
 		$config = new Config( [
-			'api_base_url' => 'https://api.vendor.example',
-			'api_token'    => 'super-secret-token',
-			'retries'      => 3,
+			'connected_site_url' => 'https://source.example',
+			'sync_mode'          => 'import',
+			'shared_secret'      => 'super-secret-value',
+			'retries'            => 3,
 		] );
 
 		$display = $config->for_display();
 
-		static::assertSame( 'https://api.vendor.example', $display['api_base_url'] );
+		static::assertSame( 'https://source.example', $display['connected_site_url'] );
 		static::assertSame( '3', $display['retries'] );
-		static::assertNotSame( 'super-secret-token', $display['api_token'] );
-		static::assertStringNotContainsString( 'super-secret-token', implode( '', $display ) );
+		static::assertNotSame( 'super-secret-value', $display['shared_secret'] );
+		static::assertStringNotContainsString( 'super-secret-value', implode( '', $display ) );
 	}
 }

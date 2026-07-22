@@ -1,4 +1,52 @@
-# WordPress VIP Integration Starter Kit
+# Safe Publish Mirror
+
+A minimal, partner-built reconstruction of Automattic's Safe Publish plugin,
+built against the VIP Integration Center SDK. It mirrors published content from
+one WordPress site to another as **drafts**, over an HMAC-authenticated channel.
+
+## How it works
+
+All runtime settings come from one VIP-injected constant,
+`VIP_SAFE_PUBLISH_MIRROR_CONFIG`:
+
+| Key | Meaning |
+| --- | --- |
+| `connected_site_url` | The peer site: the source to pull from (`import`) or the allowed destination origin (`export`). |
+| `sync_mode` | This site's role: `export` (serves content) or `import` (pulls content). |
+| `shared_secret` | HMAC-SHA256 shared secret (VIP secret-sync populates it). |
+
+Incomplete config never fatals — the endpoints stay disabled and an admin
+notice names the missing fields.
+
+**Export role (source).** Registers an HMAC-gated catalog endpoint
+(`GET /wp-json/safe-publish-mirror/v1/catalog/posts`) and exposes author +
+media metadata on `wp/v2` posts, but only to the authenticated peer. The
+inbound authenticator also lets the peer read `context=edit` content.
+
+**Import role (destination).** An import-role site gets a top-level
+**Safe Publish Mirror** admin screen that lists the source's posts with their
+local state (Available / Up to date) and a per-row **Import** button — import is
+the only action. The same run is available from WP-CLI:
+
+```sh
+wp safe-publish-mirror import --limit=5 [--post-type=post]
+```
+
+Either way it lists the source catalog, fetches each post over `wp/v2`
+(`context=edit&_embed`), sideloads referenced media, resolves the author by
+email (never auto-creating a user), and inserts a draft. Re-importing the same
+post updates the existing draft rather than duplicating it.
+
+Authentication is HMAC-SHA256 only (timestamp + content-hash + signed origin +
+action, with a replay window) — there is no Basic Auth path. Telemetry is
+Tracks-only and carries bounded metadata: never secrets, content, or emails.
+
+---
+
+This repository was scaffolded from the WordPress VIP Integration Starter Kit;
+the starter-kit guidance below still applies.
+
+## Starter Kit
 
 Welcome to WordPress VIP! This repository is a starting point for developing an integration and submitting for the Integrations Center.
 

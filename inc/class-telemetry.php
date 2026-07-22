@@ -15,6 +15,12 @@ namespace Automattic\SafePublishMirror;
 final class Telemetry {
 	public const EVENT_PREFIX = 'safe_publish_mirror_';
 
+	// Event names (auto-prefixed with EVENT_PREFIX by the VIP client). Only
+	// bounded, non-identifying metadata is ever attached — never secrets,
+	// content, URLs, or emails.
+	public const EVENT_CATALOG_LISTED   = 'catalog_listed';
+	public const EVENT_IMPORT_COMPLETED = 'import_completed';
+
 	/** @var self|null */
 	private static $instance;
 

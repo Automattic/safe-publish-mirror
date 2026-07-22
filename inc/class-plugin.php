@@ -18,23 +18,50 @@ final class Plugin {
 
 	private function __construct() {
 		add_action( 'init', [ $this, 'init' ] );
-		if ( is_admin() ) {
-			add_action( 'init', [ Admin::class, 'get_instance' ] );
-		}
 	}
 
 	public function init(): void {
-		if ( Config::get_instance()->is_ready() ) {
-			add_action( 'rest_api_init', [ REST_Controller::class, 'get_instance' ] );
-		} else {
+		$config = Config::get_instance();
+
+		if ( ! $config->is_ready() ) {
 			// Missing or incomplete runtime config must never fatal: disable the
 			// config-dependent behavior and surface a diagnostic instead.
 			add_action( 'admin_notices', [ $this, 'render_config_notice' ] );
+			return;
 		}
 
-		add_action( 'wp_footer', [ $this, 'wp_footer' ] );
+		// The source (export) role serves content over the REST API; the
+		// destination (import) role pulls it via the admin screen and WP-CLI.
+		add_action( 'rest_api_init', [ $this, 'register_rest_api' ] );
+
+		if ( $config->is_import() ) {
+			( new Import_Admin() )->register();
+
+			if ( self::wp_cli_available() ) {
+				\WP_CLI::add_command( 'safe-publish-mirror', new CLI_Command( $config ) );
+			}
+		}
 	}
 	// @codeCoverageIgnoreEnd
+
+	/**
+	 * Register the inbound authenticator and, on an export-role site, the
+	 * catalog endpoint and the source REST fields.
+	 */
+	public function register_rest_api(): void {
+		$config        = Config::get_instance();
+		$authenticator = HMAC_Authenticator::from_config( $config );
+		$authenticator->register();
+
+		if ( $config->is_export() ) {
+			( new REST_Controller( $authenticator ) )->register_routes();
+			( new Source_Fields( $authenticator ) )->register();
+		}
+	}
+
+	private static function wp_cli_available(): bool {
+		return defined( 'WP_CLI' ) && true === constant( 'WP_CLI' );
+	}
 
 	public function render_config_notice(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -64,10 +91,5 @@ final class Plugin {
 				)
 			)
 		);
-	}
-
-	public function wp_footer(): void {
-		$label = (string) Config::get_instance()->get( 'signature_label', 'Safe Publish Mirror' );
-		printf( '<p class="safe-publish-mirror-signature">%s</p>', esc_html( $label ) );
 	}
 }
