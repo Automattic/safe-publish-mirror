@@ -85,16 +85,17 @@ $spm = Import_Admin::view_model();
 					<td><?php echo esc_html( '' === $spm_row['local_status'] ? '—' : $spm_row['local_status'] ); ?></td>
 					<td><?php echo esc_html( '' === $spm_row['source_status'] ? '—' : $spm_row['source_status'] ); ?></td>
 					<td>
-						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;">
-							<input type="hidden" name="action" value="<?php echo esc_attr( Import_Admin::IMPORT_ACTION ); ?>" />
-							<input type="hidden" name="source_post_id" value="<?php echo esc_attr( (string) $spm_row['source_post_id'] ); ?>" />
-							<input type="hidden" name="post_type" value="<?php echo esc_attr( $spm_row['post_type'] ); ?>" />
-							<?php wp_nonce_field( Import_Admin::NONCE ); ?>
-							<button type="submit" class="button">
-								<span class="dashicons dashicons-download" style="vertical-align: middle;"></span>
-								<?php echo esc_html( 0 !== $spm_row['local_post_id'] ? __( 'Re-import', 'safe-publish-mirror' ) : __( 'Import', 'safe-publish-mirror' ) ); ?>
-							</button>
-						</form>
+						<?php if ( 0 !== $spm_row['local_post_id'] ) : ?>
+							<span class="spm-already-imported"><?php esc_html_e( 'Already imported', 'safe-publish-mirror' ); ?></span>
+						<?php else : ?>
+							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;">
+								<input type="hidden" name="action" value="<?php echo esc_attr( Import_Admin::IMPORT_ACTION ); ?>" />
+								<input type="hidden" name="source_post_id" value="<?php echo esc_attr( (string) $spm_row['source_post_id'] ); ?>" />
+								<input type="hidden" name="post_type" value="<?php echo esc_attr( $spm_row['post_type'] ); ?>" />
+								<?php wp_nonce_field( Import_Admin::NONCE ); ?>
+								<button type="submit" class="button"><?php esc_html_e( 'Import', 'safe-publish-mirror' ); ?></button>
+							</form>
+						<?php endif; ?>
 					</td>
 				</tr>
 			<?php endforeach; ?>
