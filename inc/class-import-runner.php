@@ -55,7 +55,7 @@ final class Import_Runner {
 		$summary = $this->summary( $results );
 
 		Telemetry::get_instance()->record_event(
-			'import_completed',
+			Telemetry::EVENT_IMPORT_COMPLETED,
 			[
 				'created' => $summary['created'],
 				'updated' => $summary['updated'],

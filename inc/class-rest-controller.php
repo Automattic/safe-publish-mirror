@@ -110,7 +110,7 @@ final class REST_Controller {
 		$items = array_map( [ $this, 'to_item' ], $posts );
 
 		Telemetry::get_instance()->record_event(
-			'catalog_listed',
+			Telemetry::EVENT_CATALOG_LISTED,
 			[
 				'post_type' => $post_type,
 				'count'     => count( $items ),

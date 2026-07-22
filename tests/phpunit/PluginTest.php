@@ -3,9 +3,6 @@ declare(strict_types = 1);
 
 namespace Automattic\SafePublishMirror;
 
-use Automattic\SafePublishMirror\Config;
-use Automattic\SafePublishMirror\Plugin;
-use Automattic\SafePublishMirror\REST_Controller;
 use ReflectionProperty;
 use WP_UnitTestCase;
 
@@ -15,8 +12,11 @@ use WP_UnitTestCase;
 class PluginTest extends WP_UnitTestCase {
 	public function tear_down(): void {
 		// Drop any Config singleton swapped in for a test so the next test
-		// re-reads the constant bootstrap.php defines.
+		// re-reads the constant bootstrap.php defines, and unhook anything init()
+		// registered so it doesn't leak into other test classes.
 		$this->set_config_singleton( null );
+		remove_action( 'rest_api_init', [ Plugin::get_instance(), 'register_rest_api' ] );
+		remove_action( 'admin_notices', [ Plugin::get_instance(), 'render_config_notice' ] );
 		parent::tear_down();
 	}
 
@@ -24,18 +24,31 @@ class PluginTest extends WP_UnitTestCase {
 		$plugin = Plugin::get_instance();
 
 		static::assertEquals( 10, has_action( 'init', [ $plugin, 'init' ] ) );
-		static::assertEquals( 10, has_action( 'rest_api_init', [ REST_Controller::class, 'get_instance' ] ) );
-		static::assertEquals( 10, has_action( 'wp_footer', [ $plugin, 'wp_footer' ] ) );
 	}
 
-	public function test_wp_footer(): void {
-		$plugin = Plugin::get_instance();
+	public function test_ready_config_wires_the_rest_api(): void {
+		$this->set_config_singleton( new Config( [
+			'connected_site_url' => 'https://peer.example',
+			'sync_mode'          => 'export',
+			'shared_secret'      => 'a-shared-secret-value-1234567890',
+		] ) );
 
-		ob_start();
-		$plugin->wp_footer();
-		$actual = ob_get_clean();
+		Plugin::get_instance()->init();
 
-		static::assertStringContainsString( '<p class="safe-publish-mirror-signature">Safe Publish Mirror (dev)</p>', $actual );
+		static::assertSame( 10, has_action( 'rest_api_init', [ Plugin::get_instance(), 'register_rest_api' ] ) );
+		static::assertFalse( has_action( 'admin_notices', [ Plugin::get_instance(), 'render_config_notice' ] ) );
+	}
+
+	public function test_incomplete_config_registers_only_the_notice(): void {
+		$this->set_config_singleton( new Config( [
+			'connected_site_url' => 'https://peer.example',
+			'sync_mode'          => 'import',
+		] ) );
+
+		Plugin::get_instance()->init();
+
+		static::assertSame( 10, has_action( 'admin_notices', [ Plugin::get_instance(), 'render_config_notice' ] ) );
+		static::assertFalse( has_action( 'rest_api_init', [ Plugin::get_instance(), 'register_rest_api' ] ) );
 	}
 
 	public function test_config_notice_lists_missing_fields(): void {
