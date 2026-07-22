@@ -35,6 +35,9 @@ final class HMAC_Authenticator {
 	 * @var list<string>
 	 */
 	private const GRANTED_CAPS = [
+		// 'exist' is the primitive our map_meta_cap override resolves object
+		// capabilities to, so it must be granted for those checks to pass.
+		'exist',
 		'read',
 		'edit_posts',
 		'edit_others_posts',
@@ -131,6 +134,10 @@ final class HMAC_Authenticator {
 
 		$this->authenticated = true;
 
+		// Always reset after dispatch so the authenticated state can't leak
+		// into a later request handled by the same PHP process.
+		add_filter( 'rest_post_dispatch', [ $this, 'tear_down' ], PHP_INT_MAX );
+
 		if ( $is_wp_route ) {
 			$this->grant_authenticated_context();
 		}
@@ -200,7 +207,6 @@ final class HMAC_Authenticator {
 	private function grant_authenticated_context(): void {
 		add_filter( 'user_has_cap', [ $this, 'grant_caps' ] );
 		add_filter( 'map_meta_cap', [ $this, 'map_meta_caps' ], 10, 2 );
-		add_filter( 'rest_post_dispatch', [ $this, 'tear_down' ], PHP_INT_MAX );
 	}
 
 	/**
