@@ -150,5 +150,4 @@ list. In summary, the integration introduces:
   in [`vip-handoff.yaml`](../vip-handoff.yaml).
 - Config schema and WordPress surfaces: this document and the manifest.
 - Conformance status: run `a8c-integration validate` (or
-  `composer run validate-integration`) — the latest report is in
-  [`docs/validation-report.md`](validation-report.md).
+  `composer run validate-integration`).
