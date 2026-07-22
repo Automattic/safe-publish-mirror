@@ -18,9 +18,6 @@ final class Plugin {
 
 	private function __construct() {
 		add_action( 'init', [ $this, 'init' ] );
-		if ( is_admin() ) {
-			add_action( 'init', [ Admin::class, 'get_instance' ] );
-		}
 	}
 
 	public function init(): void {
@@ -34,11 +31,15 @@ final class Plugin {
 		}
 
 		// The source (export) role serves content over the REST API; the
-		// destination (import) role pulls it via a WP-CLI command.
+		// destination (import) role pulls it via the admin screen and WP-CLI.
 		add_action( 'rest_api_init', [ $this, 'register_rest_api' ] );
 
-		if ( $config->is_import() && self::wp_cli_available() ) {
-			\WP_CLI::add_command( 'safe-publish-mirror', new CLI_Command( $config ) );
+		if ( $config->is_import() ) {
+			( new Import_Admin() )->register();
+
+			if ( self::wp_cli_available() ) {
+				\WP_CLI::add_command( 'safe-publish-mirror', new CLI_Command( $config ) );
+			}
 		}
 	}
 	// @codeCoverageIgnoreEnd

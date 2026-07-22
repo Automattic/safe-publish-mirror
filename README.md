@@ -23,13 +23,16 @@ notice names the missing fields.
 media metadata on `wp/v2` posts, but only to the authenticated peer. The
 inbound authenticator also lets the peer read `context=edit` content.
 
-**Import role (destination).** Pull with WP-CLI:
+**Import role (destination).** An import-role site gets a top-level
+**Safe Publish Mirror** admin screen that lists the source's posts with their
+local state (Available / Up to date) and a per-row **Import** button — import is
+the only action. The same run is available from WP-CLI:
 
 ```sh
 wp safe-publish-mirror import --limit=5 [--post-type=post]
 ```
 
-It lists the source catalog, fetches each post over `wp/v2`
+Either way it lists the source catalog, fetches each post over `wp/v2`
 (`context=edit&_embed`), sideloads referenced media, resolves the author by
 email (never auto-creating a user), and inserts a draft. Re-importing the same
 post updates the existing draft rather than duplicating it.

@@ -49,7 +49,7 @@ final class Import_Runner {
 				continue;
 			}
 
-			$results[] = $this->import_one( (int) $item['id'], (string) ( $item['post_type'] ?? $post_type ) );
+			$results[] = $this->import_single( (int) $item['id'], (string) ( $item['post_type'] ?? $post_type ) );
 		}
 
 		$summary = $this->summary( $results );
@@ -67,9 +67,12 @@ final class Import_Runner {
 	}
 
 	/**
+	 * Import one source post by ID. Returns the importer result on success or a
+	 * normalized failure array (never throws).
+	 *
 	 * @return array<string, mixed>
 	 */
-	private function import_one( int $source_post_id, string $post_type ): array {
+	public function import_single( int $source_post_id, string $post_type = 'post' ): array {
 		$payload = $this->client->fetch_post( $source_post_id, $post_type );
 		if ( $payload instanceof WP_Error ) {
 			return $this->failure( $source_post_id, $payload );

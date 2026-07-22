@@ -97,6 +97,28 @@ class ImportRunnerTest extends WP_UnitTestCase {
 		static::assertSame( '55', get_post_meta( $post->ID, Post_Importer::META_SOURCE_POST_ID, true ) );
 	}
 
+	public function test_import_single_imports_one_post_by_id(): void {
+		self::factory()->user->create( [
+			'role'       => 'author',
+			'user_email' => 'writer@source.example',
+		] );
+
+		$this->responses['/wp-json/wp/v2/posts/77'] = [
+			'id'                  => 77,
+			'type'                => 'post',
+			'title'               => [ 'raw' => 'Just one' ],
+			'content'             => [ 'raw' => '<p>One</p>' ],
+			'excerpt'             => [ 'raw' => '' ],
+			'safe_publish_author' => [ 'email' => 'writer@source.example' ],
+			'_embedded'           => [],
+		];
+
+		$result = $this->runner->import_single( 77, 'post' );
+
+		static::assertTrue( $result['success'] );
+		static::assertSame( 'draft', get_post( (int) $result['post_id'] )->post_status );
+	}
+
 	public function test_run_reports_a_catalog_fetch_failure(): void {
 		remove_filter( 'pre_http_request', [ $this, 'mock_http' ], 10 );
 		add_filter(

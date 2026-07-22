@@ -111,6 +111,14 @@ final class Post_Importer {
 	}
 
 	private function find_existing( int $source_post_id ): int {
+		return self::find_local( $source_post_id, $this->source_site_url );
+	}
+
+	/**
+	 * The local post ID previously imported for a given source post (0 if none).
+	 * Matched on source post ID + source site URL so two sources can't collide.
+	 */
+	public static function find_local( int $source_post_id, string $source_site_url ): int {
 		$found = get_posts(
 			[
 				'post_type'              => 'any',
@@ -128,7 +136,7 @@ final class Post_Importer {
 					],
 					[
 						'key'   => self::META_SOURCE_SITE_URL,
-						'value' => $this->source_site_url,
+						'value' => untrailingslashit( $source_site_url ),
 					],
 				],
 			]
