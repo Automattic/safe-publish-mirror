@@ -1,10 +1,13 @@
 <?php
 /**
- * Minimal valid config: required fields only. Optional fields fall back to
- * the defaults passed to Config::get().
+ * A valid config for a site acting as the content *destination* (import role).
+ * The schema has no optional fields, so this is the same three required keys
+ * as config-valid.php in the other role — it exists to exercise the import
+ * side and Config::get()'s fallback for keys outside the schema.
  */
 
 return [
-	'api_base_url' => 'https://api.vendor.example',
-	'api_token'    => 'mock-token',
+	'connected_site_url' => 'https://source.example',
+	'sync_mode'          => 'import',
+	'shared_secret'      => 'mock-shared-secret-abc123456789',
 ];

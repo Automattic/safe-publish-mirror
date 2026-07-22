@@ -1,11 +1,12 @@
 <?php
 /**
  * Fully configured example of the VIP_SAFE_PUBLISH_MIRROR_CONFIG runtime
- * config constant. Mock values only — never put real credentials in fixtures.
+ * config constant, for a site acting as the content *source* (export role).
+ * Mock values only — never put real credentials in fixtures.
  */
 
 return [
-	'api_base_url'    => 'https://api.vendor.example',
-	'api_token'       => 'mock-token',
-	'signature_label' => 'Safe Publish Mirror (dev)',
+	'connected_site_url' => 'https://destination.example',
+	'sync_mode'          => 'export',
+	'shared_secret'      => 'mock-shared-secret-abc123456789',
 ];

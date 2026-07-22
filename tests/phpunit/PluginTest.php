@@ -40,12 +40,15 @@ class PluginTest extends WP_UnitTestCase {
 
 	public function test_config_notice_lists_missing_fields(): void {
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
-		$this->set_config_singleton( new Config( [ 'api_base_url' => 'https://api.vendor.example' ] ) );
+		$this->set_config_singleton( new Config( [
+			'connected_site_url' => 'https://source.example',
+			'sync_mode'          => 'import',
+		] ) );
 
 		$actual = $this->render_config_notice();
 
 		static::assertStringContainsString( 'notice notice-warning', $actual );
-		static::assertStringContainsString( 'missing required fields: api_token', $actual );
+		static::assertStringContainsString( 'missing required fields: shared_secret', $actual );
 	}
 
 	public function test_config_notice_reports_undefined_constant(): void {
