@@ -6,7 +6,7 @@ integration:
   display_name: Safe Publish Mirror [Experimental]
   summary: Mirror published content from one WordPress site to another as drafts, over an HMAC-authenticated channel.
   partner:
-    name: Automattic VIP (SDK reconstruction pilot)
+    name: Stark Industries
     support_contact: vip-integrations@automattic.com
 
 documentation:
